@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer Tools - Encoders & Decoders</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="main-title">
+                <span class="icon">⚡</span>
+                Developer Tools
+                <span class="icon">⚡</span>
+            </h1>
+            <p class="subtitle">Professional Encoders, Decoders & Text Utilities</p>
+        </header>
+
+        <nav class="tool-nav">
+            <button class="nav-btn active" data-tool="url">URL</button>
+            <button class="nav-btn" data-tool="base64">Base64</button>
+            <button class="nav-btn" data-tool="unicode">Unicode</button>
+            <button class="nav-btn" data-tool="hash">Hash</button>
+            <button class="nav-btn" data-tool="json">JSON</button>
+            <button class="nav-btn" data-tool="jwt">JWT</button>
+            <button class="nav-btn" data-tool="diff">Text Diff</button>
+        </nav>
+
+        <!-- URL Tool -->
+        <div class="tool-section active" id="url-tool">
+            <div class="tool-header">
+                <h2>URL Encoder / Decoder</h2>
+                <p>Encode or decode URL strings with different methods</p>
+            </div>
+            <div class="tool-content">
+                <div class="options-group">
+                    <label class="option-label">Encoding Method:</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="url-method" value="component" checked>
+                            <span>encodeURIComponent (Full encoding)</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="url-method" value="uri">
+                            <span>encodeURI (Preserve URL structure)</span>
+                        </label>
+                    </div>
+                </div>
+                <textarea id="url-input" placeholder="Enter text to encode/decode..."></textarea>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="urlEncode()">
+                        <span class="btn-icon">🔒</span> Encode
+                    </button>
+                    <button class="btn btn-secondary" onclick="urlDecode()">
+                        <span class="btn-icon">🔓</span> Decode
+                    </button>
+                    <button class="btn btn-clear" onclick="clearTool('url')">Clear</button>
+                </div>
+                <div class="result-container">
+                    <label>Result:</label>
+                    <textarea id="url-output" readonly></textarea>
+                    <button class="btn-copy" onclick="copyResult('url-output')">📋 Copy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Base64 Tool -->
+        <div class="tool-section" id="base64-tool">
+            <div class="tool-header">
+                <h2>Base64 Encoder / Decoder</h2>
+                <p>Encode or decode Base64 strings</p>
+            </div>
+            <div class="tool-content">
+                <textarea id="base64-input" placeholder="Enter text to encode/decode..."></textarea>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="base64Encode()">
+                        <span class="btn-icon">🔒</span> Encode
+                    </button>
+                    <button class="btn btn-secondary" onclick="base64Decode()">
+                        <span class="btn-icon">🔓</span> Decode
+                    </button>
+                    <button class="btn btn-clear" onclick="clearTool('base64')">Clear</button>
+                </div>
+                <div class="result-container">
+                    <label>Result:</label>
+                    <textarea id="base64-output" readonly></textarea>
+                    <button class="btn-copy" onclick="copyResult('base64-output')">📋 Copy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unicode Tool -->
+        <div class="tool-section" id="unicode-tool">
+            <div class="tool-header">
+                <h2>Unicode Encoder / Decoder</h2>
+                <p>Convert text to Unicode escape sequences</p>
+            </div>
+            <div class="tool-content">
+                <textarea id="unicode-input" placeholder="Enter text to encode/decode..."></textarea>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="unicodeEncode()">
+                        <span class="btn-icon">🔒</span> Encode
+                    </button>
+                    <button class="btn btn-secondary" onclick="unicodeDecode()">
+                        <span class="btn-icon">🔓</span> Decode
+                    </button>
+                    <button class="btn btn-clear" onclick="clearTool('unicode')">Clear</button>
+                </div>
+                <div class="result-container">
+                    <label>Result:</label>
+                    <textarea id="unicode-output" readonly></textarea>
+                    <button class="btn-copy" onclick="copyResult('unicode-output')">📋 Copy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hash Tool -->
+        <div class="tool-section" id="hash-tool">
+            <div class="tool-header">
+                <h2>Hash Generator</h2>
+                <p>Generate MD5 and SHA256 hashes with custom options</p>
+            </div>
+            <div class="tool-content">
+                <div class="options-group">
+                    <label class="option-label">MD5 Options:</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="md5-length" value="32" checked>
+                            <span>32 characters</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="md5-length" value="16">
+                            <span>16 characters</span>
+                        </label>
+                    </div>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="md5-case" value="lowercase" checked>
+                            <span>Lowercase</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="md5-case" value="uppercase">
+                            <span>Uppercase</span>
+                        </label>
+                    </div>
+                </div>
+                <textarea id="hash-input" placeholder="Enter text to hash..."></textarea>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="generateMD5()">
+                        <span class="btn-icon">🔐</span> MD5
+                    </button>
+                    <button class="btn btn-primary" onclick="generateSHA256()">
+                        <span class="btn-icon">🔐</span> SHA256
+                    </button>
+                    <button class="btn btn-clear" onclick="clearTool('hash')">Clear</button>
+                </div>
+                <div class="result-container">
+                    <label>MD5 Hash:</label>
+                    <textarea id="hash-md5" readonly></textarea>
+                    <button class="btn-copy" onclick="copyResult('hash-md5')">📋 Copy</button>
+                </div>
+                <div class="result-container">
+                    <label>SHA256 Hash:</label>
+                    <textarea id="hash-sha256" readonly></textarea>
+                    <button class="btn-copy" onclick="copyResult('hash-sha256')">📋 Copy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- JSON Tool -->
+        <div class="tool-section" id="json-tool">
+            <div class="tool-header">
+                <h2>JSON Formatter</h2>
+                <p>Parse, validate, prettify, and minify JSON</p>
+            </div>
+            <div class="tool-content">
+                <textarea id="json-input" placeholder="Enter JSON to format..."></textarea>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="jsonPrettify()">
+                        <span class="btn-icon">✨</span> Prettify
+                    </button>
+                    <button class="btn btn-secondary" onclick="jsonMinify()">
+                        <span class="btn-icon">📦</span> Minify
+                    </button>
+                    <button class="btn btn-secondary" onclick="jsonValidate()">
+                        <span class="btn-icon">✓</span> Validate
+                    </button>
+                    <button class="btn btn-clear" onclick="clearTool('json')">Clear</button>
+                </div>
+                <div class="result-container">
+                    <label>Result:</label>
+                    <textarea id="json-output" readonly></textarea>
+                    <button class="btn-copy" onclick="copyResult('json-output')">📋 Copy</button>
+                </div>
+                <div id="json-validation" class="validation-message"></div>
+            </div>
+        </div>
+
+        <!-- JWT Tool -->
+        <div class="tool-section" id="jwt-tool">
+            <div class="tool-header">
+                <h2>JWT Encoder / Decoder</h2>
+                <p>Encode and decode JSON Web Tokens</p>
+            </div>
+            <div class="tool-content">
+                <div class="jwt-mode-switch">
+                    <button class="mode-btn active" data-mode="decode" onclick="switchJWTMode('decode')">Decode</button>
+                    <button class="mode-btn" data-mode="encode" onclick="switchJWTMode('encode')">Encode</button>
+                </div>
+
+                <!-- Decode Mode -->
+                <div id="jwt-decode-mode" class="jwt-mode active">
+                    <textarea id="jwt-token-input" placeholder="Enter JWT token to decode..."></textarea>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="jwtDecode()">
+                            <span class="btn-icon">🔓</span> Decode JWT
+                        </button>
+                        <button class="btn btn-clear" onclick="clearTool('jwt')">Clear</button>
+                    </div>
+                    <div class="result-container">
+                        <label>Header:</label>
+                        <textarea id="jwt-header" readonly></textarea>
+                    </div>
+                    <div class="result-container">
+                        <label>Payload:</label>
+                        <textarea id="jwt-payload" readonly></textarea>
+                    </div>
+                </div>
+
+                <!-- Encode Mode -->
+                <div id="jwt-encode-mode" class="jwt-mode">
+                    <div class="options-group">
+                        <label class="option-label">Algorithm:</label>
+                        <select id="jwt-algorithm" class="select-input">
+                            <option value="HS256">HS256 (HMAC SHA-256)</option>
+                            <option value="HS384">HS384 (HMAC SHA-384)</option>
+                            <option value="HS512">HS512 (HMAC SHA-512)</option>
+                        </select>
+                    </div>
+                    <div class="result-container">
+                        <label>Payload (JSON):</label>
+                        <textarea id="jwt-payload-input" placeholder='{"sub": "1234567890", "name": "John Doe", "iat": 1516239022}'></textarea>
+                    </div>
+                    <div class="result-container">
+                        <label>Secret Key:</label>
+                        <input type="text" id="jwt-secret" class="text-input" placeholder="Enter secret key..." value="your-secret-key">
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="jwtEncode()">
+                            <span class="btn-icon">🔒</span> Encode JWT
+                        </button>
+                        <button class="btn btn-clear" onclick="clearTool('jwt')">Clear</button>
+                    </div>
+                    <div class="result-container">
+                        <label>JWT Token:</label>
+                        <textarea id="jwt-token-output" readonly></textarea>
+                        <button class="btn-copy" onclick="copyResult('jwt-token-output')">📋 Copy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Text Diff Tool -->
+        <div class="tool-section" id="diff-tool">
+            <div class="tool-header">
+                <h2>Text Comparison</h2>
+                <p>Compare two texts and see character-level differences</p>
+            </div>
+            <div class="tool-content diff-content">
+                <div class="diff-inputs">
+                    <div class="diff-input-group">
+                        <label>Text 1:</label>
+                        <textarea id="diff-input1" placeholder="Enter first text..."></textarea>
+                    </div>
+                    <div class="diff-input-group">
+                        <label>Text 2:</label>
+                        <textarea id="diff-input2" placeholder="Enter second text..."></textarea>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="compareDiff()">
+                        <span class="btn-icon">🔍</span> Compare
+                    </button>
+                    <button class="btn btn-clear" onclick="clearTool('diff')">Clear</button>
+                </div>
+                <div class="result-container">
+                    <label>Differences:</label>
+                    <div id="diff-output" class="diff-output"></div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2024 Developer Tools | Built with ❤️ and Node.js</p>
+        </footer>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
