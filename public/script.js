@@ -192,46 +192,274 @@ async function generateSHA256() {
     }
 }
 
-// Text Diff
+// Text Diff - Advanced Implementation
+let currentDiffData = null;
+let currentDiffIndex = 0;
+let diffPositions = [];
+
+// Update character and line counts
+document.getElementById('diff-input1')?.addEventListener('input', updateDiffInputStats);
+document.getElementById('diff-input2')?.addEventListener('input', updateDiffInputStats);
+
+function updateDiffInputStats() {
+    const text1 = document.getElementById('diff-input1').value;
+    const text2 = document.getElementById('diff-input2').value;
+    
+    const lines1 = text1.split('\n').length;
+    const lines2 = text2.split('\n').length;
+    
+    document.getElementById('diff-lines1').textContent = `${lines1} line${lines1 !== 1 ? 's' : ''}`;
+    document.getElementById('diff-chars1').textContent = `${text1.length} character${text1.length !== 1 ? 's' : ''}`;
+    document.getElementById('diff-lines2').textContent = `${lines2} line${lines2 !== 1 ? 's' : ''}`;
+    document.getElementById('diff-chars2').textContent = `${text2.length} character${text2.length !== 1 ? 's' : ''}`;
+}
+
 async function compareDiff() {
     const text1 = document.getElementById('diff-input1').value;
     const text2 = document.getElementById('diff-input2').value;
     
-    if (!text1 || !text2) {
-        showNotification('Please enter both texts to compare', 'error');
+    if (!text1 && !text2) {
+        showNotification('Please enter texts to compare', 'error');
         return;
     }
+    
+    const mode = document.querySelector('input[name="diff-mode"]:checked').value;
+    const ignoreWhitespace = document.getElementById('diff-ignore-whitespace').checked;
+    const ignoreCase = document.getElementById('diff-ignore-case').checked;
     
     try {
         const response = await fetch('/api/diff', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text1, text2 })
+            body: JSON.stringify({ text1, text2, mode, ignoreWhitespace, ignoreCase })
         });
         const data = await response.json();
         
-        const output = document.getElementById('diff-output');
-        output.innerHTML = '';
+        if (data.error) {
+            showNotification(data.error, 'error');
+            return;
+        }
         
-        data.diff.forEach(part => {
-            const span = document.createElement('span');
-            span.textContent = part.value;
-            
-            if (part.type === 'added') {
-                span.className = 'diff-added';
-            } else if (part.type === 'removed') {
-                span.className = 'diff-removed';
-            } else {
-                span.className = 'diff-equal';
-            }
-            
-            output.appendChild(span);
-        });
+        currentDiffData = data;
+        currentDiffIndex = 0;
+        
+        // Render diff based on mode
+        if (mode === 'line') {
+            renderLineDiff(data.diff);
+        } else {
+            renderInlineDiff(data.diff, mode);
+        }
+        
+        // Update statistics
+        updateDiffStats(data.stats);
+        
+        // Setup navigation
+        setupDiffNavigation(data.diff);
         
         showNotification('Comparison complete!');
     } catch (error) {
         showNotification('Error comparing texts', 'error');
+        console.error(error);
     }
+}
+
+function renderLineDiff(diff) {
+    const leftOutput = document.getElementById('diff-output-left');
+    const rightOutput = document.getElementById('diff-output-right');
+    
+    leftOutput.innerHTML = '';
+    rightOutput.innerHTML = '';
+    
+    // Remove unified class if present
+    document.getElementById('diff-output-left').parentElement.classList.remove('diff-unified');
+    document.getElementById('diff-output-right').parentElement.classList.remove('diff-unified');
+    
+    diffPositions = [];
+    let diffCount = 0;
+    
+    diff.forEach((part, index) => {
+        // Left side (original)
+        const leftLine = document.createElement('div');
+        leftLine.className = 'diff-line';
+        
+        if (part.type === 'removed' || part.type === 'equal') {
+            leftLine.classList.add(`diff-line-${part.type}`);
+            leftLine.innerHTML = `
+                <span class="diff-line-number">${part.left.line || ''}</span>
+                <span class="diff-line-content">${escapeHtml(part.left.content)}</span>
+            `;
+        } else {
+            leftLine.classList.add('diff-line-empty');
+            leftLine.innerHTML = `
+                <span class="diff-line-number"></span>
+                <span class="diff-line-content"></span>
+            `;
+        }
+        
+        // Right side (modified)
+        const rightLine = document.createElement('div');
+        rightLine.className = 'diff-line';
+        
+        if (part.type === 'added' || part.type === 'equal') {
+            rightLine.classList.add(`diff-line-${part.type}`);
+            rightLine.innerHTML = `
+                <span class="diff-line-number">${part.right.line || ''}</span>
+                <span class="diff-line-content">${escapeHtml(part.right.content)}</span>
+            `;
+        } else {
+            rightLine.classList.add('diff-line-empty');
+            rightLine.innerHTML = `
+                <span class="diff-line-number"></span>
+                <span class="diff-line-content"></span>
+            `;
+        }
+        
+        // Track diff positions for navigation
+        if (part.type !== 'equal') {
+            diffPositions.push({ left: leftLine, right: rightLine, index: diffCount++ });
+        }
+        
+        leftOutput.appendChild(leftLine);
+        rightOutput.appendChild(rightLine);
+    });
+}
+
+function renderInlineDiff(diff, mode) {
+    const leftOutput = document.getElementById('diff-output-left');
+    const rightOutput = document.getElementById('diff-output-right');
+    
+    // Use unified view for word/char mode
+    leftOutput.parentElement.classList.add('diff-unified');
+    rightOutput.parentElement.style.display = 'none';
+    
+    leftOutput.innerHTML = '';
+    diffPositions = [];
+    
+    const container = document.createElement('div');
+    container.style.whiteSpace = 'pre-wrap';
+    container.style.wordBreak = 'break-word';
+    
+    diff.forEach(part => {
+        const span = document.createElement('span');
+        span.textContent = part.value;
+        
+        if (part.type === 'added') {
+            span.className = 'diff-char-added';
+            diffPositions.push(span);
+        } else if (part.type === 'removed') {
+            span.className = 'diff-char-removed';
+            diffPositions.push(span);
+        }
+        
+        container.appendChild(span);
+    });
+    
+    leftOutput.appendChild(container);
+    
+    // Show right panel again
+    rightOutput.parentElement.style.display = '';
+}
+
+function updateDiffStats(stats) {
+    document.getElementById('stat-added').textContent = stats.added;
+    document.getElementById('stat-removed').textContent = stats.removed;
+    document.getElementById('stat-modified').textContent = stats.modified;
+    document.getElementById('stat-unchanged').textContent = stats.unchanged;
+    
+    document.getElementById('diff-stats').style.display = 'flex';
+}
+
+function setupDiffNavigation(diff) {
+    const hasDifferences = diffPositions.length > 0;
+    
+    if (hasDifferences) {
+        document.getElementById('diff-navigation').style.display = 'flex';
+        document.getElementById('diff-total').textContent = diffPositions.length;
+        document.getElementById('diff-current').textContent = diffPositions.length > 0 ? '1' : '0';
+        currentDiffIndex = 0;
+        
+        updateNavigationButtons();
+        
+        // Scroll to first difference
+        if (diffPositions.length > 0) {
+            scrollToDiff(0);
+        }
+    } else {
+        document.getElementById('diff-navigation').style.display = 'none';
+    }
+}
+
+function navigateDiff(direction) {
+    if (diffPositions.length === 0) return;
+    
+    // Remove current highlight
+    if (diffPositions[currentDiffIndex]) {
+        const current = diffPositions[currentDiffIndex];
+        if (current.left) {
+            current.left.classList.remove('diff-line-current');
+            current.right.classList.remove('diff-line-current');
+        } else {
+            current.classList.remove('diff-line-current');
+        }
+    }
+    
+    // Update index
+    if (direction === 'next') {
+        currentDiffIndex = Math.min(currentDiffIndex + 1, diffPositions.length - 1);
+    } else {
+        currentDiffIndex = Math.max(currentDiffIndex - 1, 0);
+    }
+    
+    // Scroll to new position
+    scrollToDiff(currentDiffIndex);
+    
+    // Update counter
+    document.getElementById('diff-current').textContent = currentDiffIndex + 1;
+    
+    updateNavigationButtons();
+}
+
+function scrollToDiff(index) {
+    if (index < 0 || index >= diffPositions.length) return;
+    
+    const diff = diffPositions[index];
+    
+    if (diff.left) {
+        // Line mode
+        diff.left.classList.add('diff-line-current');
+        diff.right.classList.add('diff-line-current');
+        diff.left.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+        // Inline mode
+        diff.classList.add('diff-line-current');
+        diff.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+function updateNavigationButtons() {
+    const prevBtn = document.getElementById('diff-prev-btn');
+    const nextBtn = document.getElementById('diff-next-btn');
+    
+    prevBtn.disabled = currentDiffIndex === 0;
+    nextBtn.disabled = currentDiffIndex === diffPositions.length - 1;
+}
+
+function swapDiffInputs() {
+    const input1 = document.getElementById('diff-input1');
+    const input2 = document.getElementById('diff-input2');
+    
+    const temp = input1.value;
+    input1.value = input2.value;
+    input2.value = temp;
+    
+    updateDiffInputStats();
+    showNotification('Inputs swapped!');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // JSON Formatter
@@ -437,7 +665,16 @@ function clearTool(tool) {
         case 'diff':
             document.getElementById('diff-input1').value = '';
             document.getElementById('diff-input2').value = '';
-            document.getElementById('diff-output').innerHTML = '';
+            document.getElementById('diff-output-left').innerHTML = '';
+            document.getElementById('diff-output-right').innerHTML = '';
+            document.getElementById('diff-stats').style.display = 'none';
+            document.getElementById('diff-navigation').style.display = 'none';
+            document.getElementById('diff-output-left').parentElement.classList.remove('diff-unified');
+            document.getElementById('diff-output-right').parentElement.style.display = '';
+            currentDiffData = null;
+            currentDiffIndex = 0;
+            diffPositions = [];
+            updateDiffInputStats();
             break;
     }
     showNotification('Cleared!');

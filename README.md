@@ -34,9 +34,15 @@ A modern, professional tool website featuring various encoders, decoders, and te
 - **Multiple algorithms**: HS256, HS384, HS512
 - Perfect for authentication and API development
 
-### 📊 Text Comparison
-- Character-level diff tool to compare two texts
-- Visual highlighting of additions and removals
+### 📊 Advanced Text Comparison
+- **Three comparison modes**: Line-by-Line, Word-Level, Character-Level
+- **Visual diff viewer**: Side-by-side comparison with color highlighting
+- **Navigation controls**: Jump between differences with Previous/Next buttons
+- **Real-time statistics**: Track added, removed, modified, and unchanged content
+- **Flexible options**: Ignore whitespace and case-insensitive comparison
+- **Myers diff algorithm**: Industry-standard, efficient comparison
+- **Swap functionality**: Quickly reverse comparison direction
+- **Professional UI**: Inspired by Diffchecker and Mergely
 
 ## Design Philosophy
 

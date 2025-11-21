@@ -265,28 +265,117 @@
         <div class="tool-section" id="diff-tool">
             <div class="tool-header">
                 <h2>Text Comparison</h2>
-                <p>Compare two texts and see character-level differences</p>
+                <p>Advanced diff viewer with line-by-line and character-level comparison</p>
             </div>
             <div class="tool-content diff-content">
-                <div class="diff-inputs">
-                    <div class="diff-input-group">
-                        <label>Text 1:</label>
-                        <textarea id="diff-input1" placeholder="Enter first text..."></textarea>
+                <!-- Comparison Options -->
+                <div class="options-group">
+                    <label class="option-label">Comparison Mode:</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="diff-mode" value="line" checked>
+                            <span>Line-by-Line</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="diff-mode" value="word">
+                            <span>Word-Level</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="diff-mode" value="char">
+                            <span>Character-Level</span>
+                        </label>
                     </div>
-                    <div class="diff-input-group">
-                        <label>Text 2:</label>
-                        <textarea id="diff-input2" placeholder="Enter second text..."></textarea>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="checkbox" id="diff-ignore-whitespace">
+                            <span>Ignore Whitespace</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="checkbox" id="diff-ignore-case">
+                            <span>Ignore Case</span>
+                        </label>
                     </div>
                 </div>
+
+                <!-- Input Areas -->
+                <div class="diff-inputs">
+                    <div class="diff-input-group">
+                        <label>Original Text:</label>
+                        <textarea id="diff-input1" placeholder="Enter original text..." rows="10"></textarea>
+                        <div class="diff-input-info">
+                            <span id="diff-lines1">0 lines</span> • <span id="diff-chars1">0 characters</span>
+                        </div>
+                    </div>
+                    <div class="diff-input-group">
+                        <label>Modified Text:</label>
+                        <textarea id="diff-input2" placeholder="Enter modified text..." rows="10"></textarea>
+                        <div class="diff-input-info">
+                            <span id="diff-lines2">0 lines</span> • <span id="diff-chars2">0 characters</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
                 <div class="button-group">
                     <button class="btn btn-primary" onclick="compareDiff()">
                         <span class="btn-icon">🔍</span> Compare
                     </button>
+                    <button class="btn btn-secondary" onclick="swapDiffInputs()">
+                        <span class="btn-icon">⇄</span> Swap
+                    </button>
                     <button class="btn btn-clear" onclick="clearTool('diff')">Clear</button>
                 </div>
+
+                <!-- Statistics Summary -->
+                <div id="diff-stats" class="diff-stats" style="display: none;">
+                    <div class="stat-item stat-added">
+                        <span class="stat-icon">+</span>
+                        <span class="stat-label">Added:</span>
+                        <span class="stat-value" id="stat-added">0</span>
+                    </div>
+                    <div class="stat-item stat-removed">
+                        <span class="stat-icon">−</span>
+                        <span class="stat-label">Removed:</span>
+                        <span class="stat-value" id="stat-removed">0</span>
+                    </div>
+                    <div class="stat-item stat-modified">
+                        <span class="stat-icon">~</span>
+                        <span class="stat-label">Modified:</span>
+                        <span class="stat-value" id="stat-modified">0</span>
+                    </div>
+                    <div class="stat-item stat-unchanged">
+                        <span class="stat-icon">=</span>
+                        <span class="stat-label">Unchanged:</span>
+                        <span class="stat-value" id="stat-unchanged">0</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Controls -->
+                <div id="diff-navigation" class="diff-navigation" style="display: none;">
+                    <button class="nav-diff-btn" onclick="navigateDiff('prev')" id="diff-prev-btn">
+                        <span>↑</span> Previous Difference
+                    </button>
+                    <span class="diff-counter">
+                        <span id="diff-current">0</span> / <span id="diff-total">0</span>
+                    </span>
+                    <button class="nav-diff-btn" onclick="navigateDiff('next')" id="diff-next-btn">
+                        Next Difference <span>↓</span>
+                    </button>
+                </div>
+
+                <!-- Diff Output -->
                 <div class="result-container">
-                    <label>Differences:</label>
-                    <div id="diff-output" class="diff-output"></div>
+                    <label>Comparison Result:</label>
+                    <div id="diff-output" class="diff-output-container">
+                        <div class="diff-output-side">
+                            <div class="diff-output-header">Original</div>
+                            <div id="diff-output-left" class="diff-output-content"></div>
+                        </div>
+                        <div class="diff-output-side">
+                            <div class="diff-output-header">Modified</div>
+                            <div id="diff-output-right" class="diff-output-content"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

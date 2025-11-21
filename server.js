@@ -223,34 +223,285 @@ app.post('/api/jwt/encode', (req, res) => {
     }
 });
 
-// Text Diff
+// Advanced Text Diff using Myers algorithm
 app.post('/api/diff', (req, res) => {
     try {
-        const { text1, text2 } = req.body;
+        const { text1, text2, mode, ignoreWhitespace, ignoreCase } = req.body;
         
-        // Simple character-level diff implementation
-        const diff = [];
-        const len1 = text1.length;
-        const len2 = text2.length;
-        const maxLen = Math.max(len1, len2);
+        let processedText1 = text1;
+        let processedText2 = text2;
         
-        for (let i = 0; i < maxLen; i++) {
-            const char1 = text1[i] || '';
-            const char2 = text2[i] || '';
-            
-            if (char1 === char2) {
-                diff.push({ type: 'equal', value: char1 });
-            } else {
-                if (char1) diff.push({ type: 'removed', value: char1 });
-                if (char2) diff.push({ type: 'added', value: char2 });
-            }
+        // Apply preprocessing options
+        if (ignoreCase) {
+            processedText1 = processedText1.toLowerCase();
+            processedText2 = processedText2.toLowerCase();
         }
         
-        res.json({ diff });
+        if (ignoreWhitespace) {
+            processedText1 = processedText1.replace(/\s+/g, ' ').trim();
+            processedText2 = processedText2.replace(/\s+/g, ' ').trim();
+        }
+        
+        let diff;
+        let stats = { added: 0, removed: 0, modified: 0, unchanged: 0 };
+        
+        if (mode === 'line') {
+            diff = computeLineDiff(processedText1, processedText2, text1, text2);
+            stats = computeLineStats(diff);
+        } else if (mode === 'word') {
+            diff = computeWordDiff(processedText1, processedText2, text1, text2);
+            stats = computeWordStats(diff);
+        } else {
+            diff = computeCharDiff(processedText1, processedText2, text1, text2);
+            stats = computeCharStats(diff);
+        }
+        
+        res.json({ diff, stats, mode });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 });
+
+// Myers diff algorithm for line-based comparison
+function computeLineDiff(text1, text2, originalText1, originalText2) {
+    const lines1 = originalText1.split('\n');
+    const lines2 = originalText2.split('\n');
+    const processedLines1 = text1.split('\n');
+    const processedLines2 = text2.split('\n');
+    
+    const diff = myersDiff(processedLines1, processedLines2);
+    
+    // Map back to original lines with line numbers
+    const result = [];
+    let lineNum1 = 1;
+    let lineNum2 = 1;
+    
+    diff.forEach(part => {
+        if (part.type === 'equal') {
+            for (let i = 0; i < part.count; i++) {
+                result.push({
+                    type: 'equal',
+                    left: { line: lineNum1++, content: lines1[lineNum1 - 2] || '' },
+                    right: { line: lineNum2++, content: lines2[lineNum2 - 2] || '' }
+                });
+            }
+        } else if (part.type === 'removed') {
+            for (let i = 0; i < part.count; i++) {
+                result.push({
+                    type: 'removed',
+                    left: { line: lineNum1++, content: lines1[lineNum1 - 2] || '' },
+                    right: { line: null, content: '' }
+                });
+            }
+        } else if (part.type === 'added') {
+            for (let i = 0; i < part.count; i++) {
+                result.push({
+                    type: 'added',
+                    left: { line: null, content: '' },
+                    right: { line: lineNum2++, content: lines2[lineNum2 - 2] || '' }
+                });
+            }
+        }
+    });
+    
+    return result;
+}
+
+// Word-level diff
+function computeWordDiff(text1, text2, originalText1, originalText2) {
+    const words1 = originalText1.split(/(\s+)/);
+    const words2 = originalText2.split(/(\s+)/);
+    const processedWords1 = text1.split(/(\s+)/);
+    const processedWords2 = text2.split(/(\s+)/);
+    
+    const diff = myersDiff(processedWords1, processedWords2);
+    
+    const result = [];
+    let idx1 = 0;
+    let idx2 = 0;
+    
+    diff.forEach(part => {
+        if (part.type === 'equal') {
+            for (let i = 0; i < part.count; i++) {
+                result.push({ type: 'equal', value: words1[idx1++] || '' });
+                idx2++;
+            }
+        } else if (part.type === 'removed') {
+            for (let i = 0; i < part.count; i++) {
+                result.push({ type: 'removed', value: words1[idx1++] || '' });
+            }
+        } else if (part.type === 'added') {
+            for (let i = 0; i < part.count; i++) {
+                result.push({ type: 'added', value: words2[idx2++] || '' });
+            }
+        }
+    });
+    
+    return result;
+}
+
+// Character-level diff
+function computeCharDiff(text1, text2, originalText1, originalText2) {
+    const chars1 = originalText1.split('');
+    const chars2 = originalText2.split('');
+    const processedChars1 = text1.split('');
+    const processedChars2 = text2.split('');
+    
+    const diff = myersDiff(processedChars1, processedChars2);
+    
+    const result = [];
+    let idx1 = 0;
+    let idx2 = 0;
+    
+    diff.forEach(part => {
+        if (part.type === 'equal') {
+            for (let i = 0; i < part.count; i++) {
+                result.push({ type: 'equal', value: chars1[idx1++] || '' });
+                idx2++;
+            }
+        } else if (part.type === 'removed') {
+            for (let i = 0; i < part.count; i++) {
+                result.push({ type: 'removed', value: chars1[idx1++] || '' });
+            }
+        } else if (part.type === 'added') {
+            for (let i = 0; i < part.count; i++) {
+                result.push({ type: 'added', value: chars2[idx2++] || '' });
+            }
+        }
+    });
+    
+    return result;
+}
+
+// Myers diff algorithm implementation
+function myersDiff(arr1, arr2) {
+    const n = arr1.length;
+    const m = arr2.length;
+    const max = n + m;
+    const v = {};
+    const trace = [];
+    
+    v[1] = 0;
+    
+    for (let d = 0; d <= max; d++) {
+        trace.push({ ...v });
+        
+        for (let k = -d; k <= d; k += 2) {
+            let x;
+            
+            if (k === -d || (k !== d && v[k - 1] < v[k + 1])) {
+                x = v[k + 1];
+            } else {
+                x = v[k - 1] + 1;
+            }
+            
+            let y = x - k;
+            
+            while (x < n && y < m && arr1[x] === arr2[y]) {
+                x++;
+                y++;
+            }
+            
+            v[k] = x;
+            
+            if (x >= n && y >= m) {
+                return backtrack(trace, arr1, arr2, d);
+            }
+        }
+    }
+    
+    return [];
+}
+
+function backtrack(trace, arr1, arr2, d) {
+    const result = [];
+    let x = arr1.length;
+    let y = arr2.length;
+    
+    for (let i = d; i >= 0; i--) {
+        const v = trace[i];
+        const k = x - y;
+        
+        let prevK;
+        if (k === -i || (k !== i && v[k - 1] < v[k + 1])) {
+            prevK = k + 1;
+        } else {
+            prevK = k - 1;
+        }
+        
+        const prevX = v[prevK];
+        const prevY = prevX - prevK;
+        
+        while (x > prevX && y > prevY) {
+            result.unshift({ type: 'equal', count: 1 });
+            x--;
+            y--;
+        }
+        
+        if (i > 0) {
+            if (x > prevX) {
+                result.unshift({ type: 'removed', count: 1 });
+                x--;
+            } else if (y > prevY) {
+                result.unshift({ type: 'added', count: 1 });
+                y--;
+            }
+        }
+    }
+    
+    // Merge consecutive operations
+    return mergeDiffParts(result);
+}
+
+function mergeDiffParts(parts) {
+    const merged = [];
+    let current = null;
+    
+    parts.forEach(part => {
+        if (!current || current.type !== part.type) {
+            if (current) merged.push(current);
+            current = { type: part.type, count: part.count };
+        } else {
+            current.count += part.count;
+        }
+    });
+    
+    if (current) merged.push(current);
+    return merged;
+}
+
+// Statistics computation
+function computeLineStats(diff) {
+    const stats = { added: 0, removed: 0, modified: 0, unchanged: 0 };
+    diff.forEach(part => {
+        if (part.type === 'added') stats.added++;
+        else if (part.type === 'removed') stats.removed++;
+        else if (part.type === 'equal') stats.unchanged++;
+    });
+    return stats;
+}
+
+function computeWordStats(diff) {
+    const stats = { added: 0, removed: 0, modified: 0, unchanged: 0 };
+    diff.forEach(part => {
+        if (part.value.trim()) {
+            if (part.type === 'added') stats.added++;
+            else if (part.type === 'removed') stats.removed++;
+            else if (part.type === 'equal') stats.unchanged++;
+        }
+    });
+    return stats;
+}
+
+function computeCharStats(diff) {
+    const stats = { added: 0, removed: 0, modified: 0, unchanged: 0 };
+    diff.forEach(part => {
+        if (part.type === 'added') stats.added++;
+        else if (part.type === 'removed') stats.removed++;
+        else if (part.type === 'equal') stats.unchanged++;
+    });
+    return stats;
+}
 
 // Serve index.html
 app.get('/', (req, res) => {
